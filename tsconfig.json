@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "sourceMap": true,
+    "declaration": true,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": false,
+    "target": "es2018",
+    "strict": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+
+    "types": ["node"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "baseUrl": "src"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}
