@@ -12,7 +12,8 @@
         "useImportType": "off"
       },
       "complexity": {
-        "noStaticOnlyClass": "off"
+        "noStaticOnlyClass": "off",
+        "noBannedTypes": "warn"
       },
       "suspicious": {
         "noExplicitAny": "warn"

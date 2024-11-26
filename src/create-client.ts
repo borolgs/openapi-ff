@@ -58,7 +58,6 @@ type InitOrPrependInit<
 > = Options extends { mapParams: (init: any) => any } ? PrependInit : Init;
 
 type CreateApiEffect<
-  // biome-ignore lint/complexity/noBannedTypes: <explanation>
   Paths extends Record<string, Record<HttpMethod, {}>>,
   Media extends MediaType
 > = <
@@ -66,7 +65,6 @@ type CreateApiEffect<
   Path extends PathsWithMethod<Paths, Method>,
   Init extends MaybeOptionalInit<Paths[Path], Method>,
   Response extends Required<FetchResponse<Paths[Path][Method], Init, Media>>,
-  // biome-ignore lint/complexity/noBannedTypes: <explanation>
   Options extends CreateApiEffectOptions<Init> = {}
 >(
   method: Method,
@@ -85,7 +83,6 @@ type CreateApiEffect<
 >;
 
 type CreateApiEffectWithContract<
-  // biome-ignore lint/complexity/noBannedTypes: <explanation>
   Paths extends Record<string, Record<HttpMethod, {}>>,
   Media extends MediaType
 > = <
@@ -93,7 +90,6 @@ type CreateApiEffectWithContract<
   Path extends PathsWithMethod<Paths, Method>,
   Init extends MaybeOptionalInit<Paths[Path], Method>,
   Response extends Required<FetchResponse<Paths[Path][Method], Init, Media>>,
-  // biome-ignore lint/complexity/noBannedTypes: <explanation>
   Options extends CreateApiEffectOptions<Init> = {}
 >(
   method: Method,
@@ -114,10 +110,15 @@ type CreateApiEffectWithContract<
   contract: Contract<unknown, Response["data"]>;
 };
 
-type EffectorClientOptions = {
-  createContract?: (
-    method: HttpMethod,
-    path: string
+type EffectorClientOptions<
+  Paths extends Record<string, Record<HttpMethod, {}>>
+> = {
+  createContract?: <
+    Method extends HttpMethod,
+    Path extends PathsWithMethod<Paths, Method>
+  >(
+    method: Method,
+    path: Path
   ) => Contract<unknown, unknown>;
 };
 
@@ -134,7 +135,7 @@ export function createClient<
   Media extends MediaType = MediaType
 >(
   client: Client<Paths, Media>,
-  config: EffectorClientOptions = {}
+  config: EffectorClientOptions<Paths> = {}
 ): OpenapiEffectorClient<Paths, Media> {
   const createApiEffect: CreateApiEffect<Paths, Media> = (
     method,
@@ -184,7 +185,7 @@ export function createClient<
 
       return {
         effect: createApiEffect(method, url, options) as any,
-        contract: config.createContract(method, url.toString()) as any,
+        contract: config.createContract(method, url) as any,
       };
     },
   };

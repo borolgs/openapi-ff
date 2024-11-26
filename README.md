@@ -114,7 +114,10 @@ import { zodContract } from "@farfetched/zod";
 
 const { createApiEffectWithContract } = createClient(fetchClient, {
   createContract(method, path) {
-    const { response } = (EndpointByMethod as any)[method][path];
+    const response = (EndpointByMethod as any)[method][path]?.response;
+    if (!response) {
+      throw new Error(`Response schema for route "${method} ${path}" doesn't exist`);
+    }
     return zodContract(response);
   },
 });

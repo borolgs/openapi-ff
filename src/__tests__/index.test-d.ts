@@ -1,13 +1,19 @@
 import { describe, test, expectTypeOf } from "vitest";
 import createFetchClient from "openapi-fetch";
-import { type EventCallable, type Event } from "effector";
+import { type EventCallable, type Event, Effect } from "effector";
 import { ApiError, createClient } from "../create-client";
 import { components, paths } from "./api";
-import { createQuery, HttpError, NetworkError } from "@farfetched/core";
+import {
+  Contract,
+  createQuery,
+  HttpError,
+  NetworkError,
+} from "@farfetched/core";
 
 describe("createApiEffect", () => {
   const fetchClient = createFetchClient<paths>();
-  const { createApiEffect } = createClient(fetchClient);
+  const { createApiEffect, createApiEffectWithContract } =
+    createClient(fetchClient);
 
   test("query has correct types", async () => {
     const query = createQuery({
@@ -30,6 +36,30 @@ describe("createApiEffect", () => {
           | HttpError
           | NetworkError;
       }>
+    >();
+  });
+
+  test("effect with contract has correct types", async () => {
+    const { effect, contract } = createApiEffectWithContract(
+      "get",
+      "/blogposts"
+    );
+
+    expectTypeOf(effect).toMatchTypeOf<
+      Effect<
+        any,
+        components["schemas"]["Post"][],
+        | ApiError<
+            number,
+            components["responses"]["Error"]["content"]["application/json"]
+          >
+        | HttpError
+        | NetworkError
+      >
+    >();
+
+    expectTypeOf(contract).toMatchTypeOf<
+      Contract<unknown, components["schemas"]["Post"][]>
     >();
   });
 
