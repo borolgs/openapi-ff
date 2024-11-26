@@ -86,14 +86,52 @@ const apiError = sample({
 
 > openapi-typescript by its design generates runtime-free static types, and only static types.
 
-To enable runtime validation, you can use third-party solutions, such as **[orval](https://orval.dev/)**:
+However, `openapi-ff` allows adding a contract factory when creating a client and provides a corresponding method, `createApiEffectWithContract`:
+
+```ts
+const { createApiEffectWithContract } = createClient(fetchClient, {
+  createContract(method, path) {
+    // ... create your own contract
+    return contract; // Contract<unknown, unknown>
+  },
+});
+
+const query = createQuery({
+  ...createApiEffectWithContract("get", "/blogposts"),
+});
+```
+
+### [typed-openapi](https://github.com/astahmer/typed-openapi) example
+
+```bash
+npx typed-openapi path/to/api.yaml -o src/zod.ts -r zod # Generate zod schemas
+pnpm install zod @farfetched/zod
+```
+
+```ts
+import { EndpointByMethod } from "./zod";
+import { zodContract } from "@farfetched/zod";
+
+const { createApiEffectWithContract } = createClient(fetchClient, {
+  createContract(method, path) {
+    const { response } = (EndpointByMethod as any)[method][path];
+    return zodContract(response);
+  },
+});
+
+const query = createQuery({
+  ...createApiEffectWithContract("get", "/blogposts"),
+});
+```
+
+### [orval](https://orval.dev/) example
+
+Alternatively, you can simply add any contract to a query:
 
 ```bash
 pnpm install zod @farfetched/zod
 npx orval --input path/to/api.yaml --output src/zod.ts --client zod --mode single
 ```
-
-Usage:
 
 ```ts
 import { zodContract } from "@farfetched/zod";

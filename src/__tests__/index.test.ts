@@ -1,10 +1,12 @@
-import { describe, expect, vi, test, beforeEach, Mock } from "vitest";
+import { describe, expect, test, beforeEach } from "vitest";
 import createFetchClient from "openapi-fetch";
 import { allSettled, fork } from "effector";
 import { createClient } from "../create-client";
 import { paths } from "./api";
-import { createQuery } from "@farfetched/core";
+import { Contract, createQuery } from "@farfetched/core";
+import { zodContract } from "@farfetched/zod";
 import { MockAgent, setGlobalDispatcher } from "undici";
+import { EndpointByMethod } from "./zod";
 
 describe("createApiEffect", () => {
   const baseUrl = "https://api.example.com" as const;
@@ -95,6 +97,56 @@ describe("createApiEffect", () => {
         code: 500,
         message: "Error",
       },
+    });
+  });
+
+  describe("WithContract", () => {
+    const { createApiEffectWithContract } = createClient(fetchClient, {
+      createContract(method, path) {
+        const { response } = (EndpointByMethod as any)[method][path];
+
+        return zodContract(response);
+      },
+    });
+
+    test("validates successful", async () => {
+      agent
+        .get(baseUrl)
+        .intercept({ path: "/blogposts", method: "GET" })
+        .reply(200, [{ title: "title", body: "body" }]);
+
+      const query = createQuery({
+        ...createApiEffectWithContract("get", "/blogposts", {}),
+      });
+
+      const scope = fork();
+      await allSettled(query.start, { scope, params: {} });
+
+      expect(scope.getState(query.$data)).toMatchObject([
+        { title: "title", body: "body" },
+      ]);
+    });
+
+    test("returns validation error for missing required fields", async () => {
+      agent
+        .get(baseUrl)
+        .intercept({ path: "/blogposts/1", method: "GET" })
+        .reply(200, { title: "title", data: "body" });
+
+      const query = createQuery({
+        ...createApiEffectWithContract("get", "/blogposts/{post_id}"),
+      });
+
+      const scope = fork();
+      await allSettled(query.start, {
+        scope,
+        params: { params: { path: { post_id: "1" } } },
+      });
+
+      expect(scope.getState(query.$error)).toMatchObject({
+        validationErrors: ["Required, path: body"],
+        errorType: "INVALID_DATA",
+      });
     });
   });
 });
