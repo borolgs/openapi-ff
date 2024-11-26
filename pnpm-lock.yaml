@@ -22,6 +22,9 @@ devDependencies:
   '@biomejs/biome':
     specifier: ^1.9.4
     version: 1.9.4
+  '@farfetched/zod':
+    specifier: ^0.12.8
+    version: 0.12.8(@farfetched/core@0.12.8)(zod@3.23.8)
   '@types/node':
     specifier: ^20.12.7
     version: 20.17.7
@@ -43,6 +46,9 @@ devDependencies:
   vitest:
     specifier: 2.0.4
     version: 2.0.4(@types/node@20.17.7)
+  zod:
+    specifier: ^3.23.8
+    version: 3.23.8
 
 packages:
 
@@ -381,7 +387,16 @@ packages:
       effector: ^23.0.0
     dependencies:
       effector: 23.2.3
-    dev: false
+
+  /@farfetched/zod@0.12.8(@farfetched/core@0.12.8)(zod@3.23.8):
+    resolution: {integrity: sha512-+f1j+g738k6I67WGwD3YWsCpueRB7Q3Ej/BI4uxLbLR3pG4MgaLEQmgS4zEodAkDwll6OPlykuXqTwx0g+UWwA==}
+    peerDependencies:
+      '@farfetched/core': 0.12.8
+      zod: ^3.19
+    dependencies:
+      '@farfetched/core': 0.12.8(effector@23.2.3)
+      zod: 3.23.8
+    dev: true
 
   /@jridgewell/gen-mapping@0.3.5:
     resolution: {integrity: sha512-IzL8ZoEDIBRWEzlCcRhOaCupYyN5gdIK+Q6fbFdPDg6HqX6jpkItn7DFIpW9LQzXG6Df9sA7+OKnq0qlz/GaQg==}
@@ -894,7 +909,6 @@ packages:
   /effector@23.2.3:
     resolution: {integrity: sha512-nBk3pzdJKT/Sn3OhLUurZoxKXUBd+iqiYHNoBRDFc8EE/vXp2JPNsickX59ZjlDbsWZwTMCVV3tovxjRo+vMGQ==}
     engines: {node: '>=11.0.0'}
-    dev: false
 
   /entities@4.5.0:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
@@ -1605,4 +1619,8 @@ packages:
       validator: 13.12.0
     optionalDependencies:
       commander: 9.5.0
+    dev: true
+
+  /zod@3.23.8:
+    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
     dev: true
