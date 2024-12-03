@@ -2,7 +2,7 @@
 
 openapi-ff is a type-safe tiny wrapper around [effector](https://effector.dev/) and [farfetched](https://ff.effector.dev/) to work with OpenAPI schema.
 
-It works by using [openapi-fetch](../openapi-fetch) and [openapi-typescript](../openapi-typescript).
+It works by using [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) and [openapi-typescript](https://openapi-ts.dev/).
 
 ## Setup
 
