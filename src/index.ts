@@ -1,1 +1,1 @@
-export { createClient, isApiError, type ApiError } from './create-client';
+export { createEffectorClient, isApiError, mergeInitHeaders } from './create-client';

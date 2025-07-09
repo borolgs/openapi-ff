@@ -114,7 +114,7 @@ export function isApiError<S extends ErrorStatus, R>(
   return args.error?.errorType === API;
 }
 
-export function createClient<Paths extends {}>(
+export function createEffectorClient<Paths extends {}>(
   client: Client<Paths>,
   options?: {
     createContract?: <Method extends HttpMethod, Path extends PathsWithMethod<Paths, Method>>(

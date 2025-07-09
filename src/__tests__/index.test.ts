@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach } from 'vitest';
 import createFetchClient from 'openapi-fetch';
 import { allSettled, createStore, fork } from 'effector';
-import { createClient } from '../create-client';
+import { createEffectorClient } from '../create-client';
 import { paths } from './api';
 import { createQuery } from '@farfetched/core';
 import { zodContract } from '@farfetched/zod';
@@ -11,7 +11,7 @@ import { EndpointByMethod } from './zod';
 describe('createApiEffect', () => {
   const baseUrl = 'https://api.example.com' as const;
   const fetchClient = createFetchClient<paths>({ baseUrl });
-  const { createApiEffect } = createClient(fetchClient);
+  const { createApiEffect } = createEffectorClient(fetchClient);
 
   let agent: MockAgent;
   beforeEach(() => {
@@ -117,7 +117,7 @@ describe('createApiEffect', () => {
   });
 
   describe('WithContract', () => {
-    const { createApiEffect } = createClient(fetchClient, {
+    const { createApiEffect } = createEffectorClient(fetchClient, {
       createContract(method, path) {
         const endpoints = EndpointByMethod[method] as Record<string, any>;
         const response = endpoints[path]?.response;

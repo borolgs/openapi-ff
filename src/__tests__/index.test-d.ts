@@ -1,14 +1,14 @@
 import { describe, test, expectTypeOf } from 'vitest';
 import createFetchClient from 'openapi-fetch';
 import { type EventCallable, type Event, Effect, createStore } from 'effector';
-import { ApiError, createClient } from '../create-client';
+import { ApiError, createEffectorClient } from '../create-client';
 import { components, paths } from './api';
 import { Contract, createQuery, HttpError, NetworkError } from '@farfetched/core';
 import { ErrorStatus } from 'types';
 
 describe('createApiEffect', () => {
   const fetchClient = createFetchClient<paths>();
-  const { createApiEffect } = createClient(fetchClient);
+  const { createApiEffect } = createEffectorClient(fetchClient);
 
   test('query has correct types', async () => {
     const query = createQuery({
