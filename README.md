@@ -31,7 +31,7 @@ export const client = createFetchClient<paths>({
 export const { createApiEffect } = createClient(client);
 
 const blogpostQuery = createQuery({
-  effect: createApiEffect("get", "/blogposts/{post_id}"),
+  ...createApiEffect("get", "/blogposts/{post_id}"),
 });
 ```
 
@@ -60,11 +60,10 @@ import { chainRoute } from "atomic-router";
 import { startChain } from "@farfetched/atomic-router";
 import { isApiError } from "openapi-ff";
 
-const getBlogpostFx = createApiEffect("get", "/blogposts/{post_id}", {
-  mapParams: (args: { postId: string }) => ({ params: { path: { post_id: args.postId } } }),
-});
 const blogpostQuery = createQuery({
-  effect: getBlogpostFx,
+  ...createApiEffect("get", "/blogposts/{post_id}", {
+    mapParams: (args: { postId: string }) => ({ params: { path: { post_id: args.postId } } }),
+  }),
   mapData: ({ result, params }) => ({ ...result, ...params }),
   initialData: { body: "-", title: "-", postId: "0" },
 });
@@ -80,16 +79,31 @@ const apiError = sample({
 });
 ```
 
+Map with source:
+
+```ts
+import { mergeInitHeaders } from 'openapi-ff';
+
+const blogpostQuery = createQuery({
+  ...createApiEffect("get", "/blogposts/{post_id}", {
+    mapParams: {
+      source: $token,
+      fn: (token, init) => mergeInitHeaders(init, { Authorization: token }),
+    },
+  }),
+});
+```
+
 ## Runtime Validation
 
 `openapi-ff` does not handle runtime validation, as `openapi-typescript` [does not support it](https://github.com/openapi-ts/openapi-typescript/issues/1420#issuecomment-1792909086).
 
 > openapi-typescript by its design generates runtime-free static types, and only static types.
 
-However, `openapi-ff` allows adding a contract factory when creating a client and provides a corresponding method, `createApiEffectWithContract`:
+However, `openapi-ff` allows adding a contract factory when creating a client:
 
 ```ts
-const { createApiEffectWithContract } = createClient(fetchClient, {
+const { createApiEffect } = createClient(fetchClient, {
   createContract(method, path) {
     // ... create your own contract
     return contract; // Contract<unknown, unknown>
@@ -97,7 +111,7 @@ const { createApiEffectWithContract } = createClient(fetchClient, {
 });
 
 const query = createQuery({
-  ...createApiEffectWithContract("get", "/blogposts"),
+  ...createApiEffect("get", "/blogposts"),
 });
 ```
 
@@ -112,7 +126,7 @@ pnpm install zod @farfetched/zod
 import { EndpointByMethod } from "./zod";
 import { zodContract } from "@farfetched/zod";
 
-const { createApiEffectWithContract } = createClient(fetchClient, {
+const { createApiEffect } = createClient(fetchClient, {
   createContract(method, path) {
     const response = (EndpointByMethod as any)[method][path]?.response;
     if (!response) {
@@ -123,39 +137,6 @@ const { createApiEffectWithContract } = createClient(fetchClient, {
 });
 
 const query = createQuery({
-  ...createApiEffectWithContract("get", "/blogposts"),
-});
-```
-
-### [orval](https://orval.dev/) example
-
-Alternatively, you can simply add any contract to a query:
-
-```bash
-pnpm install zod @farfetched/zod
-npx orval --input path/to/api.yaml --output src/zod.ts --client zod --mode single
-```
-
-```ts
-import { zodContract } from "@farfetched/zod";
-import { getBlogpostsResponseItem } from "./zod";
-
-const blogpostQuery = createQuery({
-  effect: createApiEffect("get", "/blogposts/{post_id}"),
-  contract: zodContract(getBlogpostsResponseItem),
-});
-```
-
-## TODO
-
-Add `createApiQuery`:
-
-```ts
-createApiQuery({
-  method: "get",
-  path: "/blogposts/{post_id}",
-  mapParams: (args: { postId: string }) => ({ params: { path: { post_id: args.postId } } }),
-  mapData: ({ result, params }) => ({ ...result, ...params }),
-  initialData: { body: "-", title: "-", postId: "0" },
+  ...createApiEffect("get", "/blogposts"),
 });
 ```

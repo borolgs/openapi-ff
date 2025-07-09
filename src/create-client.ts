@@ -1,192 +1,208 @@
 import {
-  Client,
-  ClientMethod,
-  FetchResponse,
-  MaybeOptionalInit,
-} from "openapi-fetch";
-
-import { createEffect, Effect } from "effector";
-import {
-  MediaType,
-  HttpMethod,
-  PathsWithMethod,
-} from "openapi-typescript-helpers";
-import {
+  type Contract,
   httpError,
-  type HttpError,
-  type NetworkError,
   networkError,
   type FarfetchedError,
-  Contract,
-} from "@farfetched/core";
+  type HttpError,
+  type NetworkError,
+} from '@farfetched/core';
+import { attach, createStore, type Store, type Effect } from 'effector';
+import {
+  type ClientMethod,
+  type FetchResponse,
+  type MaybeOptionalInit,
+  type Client,
+  type FetchOptions,
+  mergeHeaders,
+} from 'openapi-fetch';
 
-const API = "API";
-export interface ApiError<Status extends number = number, ApiResponse = unknown>
-  extends FarfetchedError<typeof API> {
-  status: Status;
+import type {
+  ErrorStatus,
+  HttpMethod,
+  FilterKeys,
+  ResponseObjectMap,
+  PathsWithMethod,
+} from './types';
+
+export type OpenapiEffectorClient<Paths extends {}> = {
+  createApiEffect: CreateApiEffect<Paths>;
+};
+
+type CreateApiEffect<Paths extends Record<string, Record<HttpMethod, {}>>> = {
+  // Simple
+  <
+    Method extends HttpMethod,
+    Path extends PathsWithMethod<Paths, Method>,
+    Operation extends Paths[Path][Method],
+    Responses extends ResponseObjectMap<Operation>,
+    Init extends MaybeOptionalInit<Paths[Path], Method>,
+    Response extends Required<FetchResponse<Paths[Path][Method], Init, `${string}/json`>>,
+  >(
+    method: Method,
+    path: Path,
+  ): {
+    effect: Effect<Init, Response['data'], ApiErrors<Responses> | HttpError | NetworkError>;
+    contract: Contract<unknown, Response['data']>;
+  };
+
+  // Mapper with source
+  <
+    Method extends HttpMethod,
+    Path extends PathsWithMethod<Paths, Method>,
+    Operation extends Paths[Path][Method],
+    Responses extends ResponseObjectMap<Operation>,
+    Init extends MaybeOptionalInit<Paths[Path], Method>,
+    Response extends Required<FetchResponse<Paths[Path][Method], Init, `${string}/json`>>,
+    Source,
+    NewInit = Init,
+  >(
+    method: Method,
+    path: Path,
+    options: {
+      mapParams: {
+        source: Store<Source>;
+        fn: (source: Source, params: NewInit) => Init;
+      };
+    },
+  ): {
+    effect: Effect<NewInit, Response['data'], ApiErrors<Responses> | HttpError | NetworkError>;
+    contract: Contract<unknown, Response['data']>;
+  };
+
+  // Mapper
+  <
+    Method extends HttpMethod,
+    Path extends PathsWithMethod<Paths, Method>,
+    Operation extends Paths[Path][Method],
+    Responses extends ResponseObjectMap<Operation>,
+    Init extends MaybeOptionalInit<Paths[Path], Method>,
+    Response extends Required<FetchResponse<Paths[Path][Method], Init, `${string}/json`>>,
+    NewInit,
+  >(
+    method: Method,
+    path: Path,
+    options: {
+      mapParams: (params: NewInit) => Init;
+    },
+  ): {
+    effect: Effect<NewInit, Response['data'], ApiErrors<Responses> | HttpError | NetworkError>;
+    contract: Contract<unknown, Response['data']>;
+  };
+};
+
+const API = 'API';
+export type ApiError<S extends ErrorStatus, T> = {
+  status: S;
   statusText: string;
-  response: ApiResponse;
-}
+  response: T;
+} & FarfetchedError<typeof API>;
+
+type ApiErrors<Responses extends Record<string | number, any>> = {
+  [K in keyof Responses]: K extends ErrorStatus
+    ? Responses[K] extends { content: Record<string, any> }
+      ? ApiError<K, FilterKeys<Responses[K]['content'], `${string}/json`>>
+      : never
+    : never;
+}[keyof Responses & ErrorStatus];
 
 type WithError<T = any, P = Record<string, unknown>> = P & { error: T };
 
-function apiError<
-  Status extends number = number,
-  ErrorResponse = unknown
->(config: {
-  status: Status;
-  statusText: string;
-  response: ErrorResponse;
-}): ApiError<Status, ErrorResponse> {
-  return {
-    ...config,
-    errorType: API,
-    explanation: "Request was finished with unsuccessful HTTP code",
-  };
-}
-
-export function isApiError(args: WithError): args is WithError<ApiError> {
+// TODO
+export function isApiError<S extends ErrorStatus, R>(
+  args: WithError,
+): args is WithError<ApiError<S, R>> {
   return args.error?.errorType === API;
 }
 
-type CreateApiEffectOptions<Init> = { mapParams?: (init: any) => Init };
-
-type InitOrPrependInit<
-  Init,
-  PrependInit,
-  Options extends CreateApiEffectOptions<Init>
-> = Options extends { mapParams: (init: any) => any } ? PrependInit : Init;
-
-type CreateApiEffect<
-  Paths extends Record<string, Record<HttpMethod, {}>>,
-  Media extends MediaType
-> = <
-  Method extends HttpMethod,
-  Path extends PathsWithMethod<Paths, Method>,
-  Init extends MaybeOptionalInit<Paths[Path], Method>,
-  Response extends Required<FetchResponse<Paths[Path][Method], Init, Media>>,
-  Options extends CreateApiEffectOptions<Init> = {}
->(
-  method: Method,
-  path: Path,
-  options?: Options
-) => Effect<
-  Init extends undefined
-    ? void
-    : InitOrPrependInit<
-        Init,
-        Parameters<NonNullable<Options["mapParams"]>>[0],
-        Options
-      >,
-  Response["data"],
-  ApiError<number, Response["error"]> | HttpError | NetworkError
->;
-
-type CreateApiEffectWithContract<
-  Paths extends Record<string, Record<HttpMethod, {}>>,
-  Media extends MediaType
-> = <
-  Method extends HttpMethod,
-  Path extends PathsWithMethod<Paths, Method>,
-  Init extends MaybeOptionalInit<Paths[Path], Method>,
-  Response extends Required<FetchResponse<Paths[Path][Method], Init, Media>>,
-  Options extends CreateApiEffectOptions<Init> = {}
->(
-  method: Method,
-  path: Path,
-  options?: Options
-) => {
-  effect: Effect<
-    Init extends undefined
-      ? void
-      : InitOrPrependInit<
-          Init,
-          Parameters<NonNullable<Options["mapParams"]>>[0],
-          Options
-        >,
-    Response["data"],
-    ApiError<number, Response["error"]> | HttpError | NetworkError
-  >;
-  contract: Contract<unknown, Response["data"]>;
-};
-
-type EffectorClientOptions<
-  Paths extends Record<string, Record<HttpMethod, {}>>
-> = {
-  createContract?: <
-    Method extends HttpMethod,
-    Path extends PathsWithMethod<Paths, Method>
-  >(
-    method: Method,
-    path: Path
-  ) => Contract<unknown, unknown>;
-};
-
-export interface OpenapiEffectorClient<
-  Paths extends {},
-  Media extends MediaType = MediaType
-> {
-  createApiEffect: CreateApiEffect<Paths, Media>;
-  createApiEffectWithContract: CreateApiEffectWithContract<Paths, Media>;
-}
-
-export function createClient<
-  Paths extends {},
-  Media extends MediaType = MediaType
->(
-  client: Client<Paths, Media>,
-  config: EffectorClientOptions<Paths> = {}
-): OpenapiEffectorClient<Paths, Media> {
-  const createApiEffect: CreateApiEffect<Paths, Media> = (
-    method,
-    url,
-    options
-  ) => {
+export function createClient<Paths extends {}>(
+  client: Client<Paths>,
+  options?: {
+    createContract?: <Method extends HttpMethod, Path extends PathsWithMethod<Paths, Method>>(
+      method: Method,
+      path: Path,
+    ) => Contract<unknown, unknown>;
+  },
+): OpenapiEffectorClient<Paths> {
+  const createApiEffect = (method: any, path: any, opts: any) => {
     const mth = method.toUpperCase() as Uppercase<typeof method>;
-    const fn = client[mth] as ClientMethod<Paths, typeof method, Media>;
+    const fn = (client as any)[mth] as ClientMethod<Paths, typeof method, `${string}/json`>;
 
-    return createEffect(async (init: any) => {
-      const { data, error, response } = await fn(
-        url,
-        options?.mapParams?.(init) ?? init
-      ).catch((cause) => {
-        throw networkError({
-          reason: cause?.message ?? null,
-          cause,
+    const source = opts?.mapParams?.source ?? createStore(null);
+
+    const hasMapper = !!opts?.mapParams;
+    const withSource = !!opts?.mapParams.fn;
+    const mapper = hasMapper ? (withSource ? opts.mapParams.fn : opts.mapParams) : null;
+
+    const requestFx = attach({
+      source,
+      effect: async (s: any, init: any) => {
+        let mappedInit = init;
+        if (hasMapper) {
+          if (withSource) {
+            mappedInit = mapper(s, init);
+          } else {
+            mappedInit = mapper(init);
+          }
+        }
+
+        const { data, error, response } = await fn(path, mappedInit).catch((cause) => {
+          throw networkError({
+            reason: cause?.message ?? null,
+            cause,
+          });
         });
-      });
 
-      if (error != null && error !== "") {
-        throw apiError({
-          status: response.status,
-          statusText: response.statusText,
-          response: error,
-        });
-      }
+        if (error != null && error !== '') {
+          throw apiError({
+            status: response.status,
+            statusText: response.statusText,
+            response: error,
+          });
+        }
 
-      if (!response.ok) {
-        throw httpError({
-          status: response.status,
-          statusText: response.statusText,
-          response: null,
-        });
-      }
+        if (!response.ok) {
+          throw httpError({
+            status: response.status,
+            statusText: response.statusText,
+            response: null,
+          });
+        }
 
-      return data;
-    }) as any;
+        return data;
+      },
+    });
+
+    return {
+      effect: requestFx,
+      contract: (options?.createContract?.(method, path) ?? noopContract()) as any,
+    };
   };
 
-  return {
-    createApiEffect,
-    createApiEffectWithContract: (method, url, options) => {
-      if (config.createContract == null) {
-        throw new Error("'createContract' is missing in config");
-      }
+  return { createApiEffect: createApiEffect as any };
+}
 
-      return {
-        effect: createApiEffect(method, url, options) as any,
-        contract: config.createContract(method, url) as any,
-      };
-    },
+function apiError<Status extends number = number, ErrorResponse = unknown>(config: {
+  status: Status;
+  statusText: string;
+  response: ErrorResponse;
+}): any {
+  return {
+    ...config,
+    errorType: API,
+    explanation: 'Request was finished with unsuccessful API response',
+  };
+}
+
+export function mergeInitHeaders<T>(init: FetchOptions<T>, headers: Record<string, any>) {
+  return {
+    ...init,
+    headers: mergeHeaders(init.headers, headers),
+  };
+}
+
+function noopContract<T>() {
+  return {
+    isData: (_: any): _ is T => true,
+    getErrorMessages: () => [],
   };
 }
