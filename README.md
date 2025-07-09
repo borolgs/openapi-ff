@@ -79,6 +79,21 @@ const apiError = sample({
 });
 ```
 
+Map with source:
+
+```ts
+import { mergeInitHeaders } from 'openapi-ff';
+
+const blogpostQuery = createQuery({
+  ...createApiEffect("get", "/blogposts/{post_id}", {
+    mapParams: {
+      source: $token,
+      fn: (token, init) => mergeInitHeaders(init, { Authorization: token }),
+    },
+  }),
+});
+```
+
 ## Runtime Validation
 
 `openapi-ff` does not handle runtime validation, as `openapi-typescript` [does not support it](https://github.com/openapi-ts/openapi-typescript/issues/1420#issuecomment-1792909086).
