@@ -1,10 +1,10 @@
-import { describe, test, expectTypeOf } from 'vitest';
-import createFetchClient from 'openapi-fetch';
-import { type EventCallable, type Event, Effect, createStore } from 'effector';
+import { Contract, HttpError, NetworkError, createQuery } from '@farfetched/core';
+import { Effect, type Event, type EventCallable, createStore } from 'effector';
+import createFetchClient, { type FetchOptions } from 'openapi-fetch';
+import { ErrorStatus, PathsWithMethod } from 'types';
+import { describe, expectTypeOf, test } from 'vitest';
 import { ApiError, createEffectorClient } from '../create-client';
 import { components, paths } from './api';
-import { Contract, createQuery, HttpError, NetworkError } from '@farfetched/core';
-import { ErrorStatus } from 'types';
 
 describe('createApiEffect', () => {
   const fetchClient = createFetchClient<paths>();
@@ -45,6 +45,26 @@ describe('createApiEffect', () => {
     >();
 
     expectTypeOf(contract).toMatchTypeOf<Contract<unknown, components['schemas']['Post'][]>>();
+  });
+
+  test('effect has correct params type: path', async () => {
+    const query = createQuery({
+      ...createApiEffect('get', '/blogposts/{post_id}'),
+    });
+
+    expectTypeOf(query.start).toEqualTypeOf<
+      EventCallable<FetchOptions<paths['/blogposts/{post_id}']['get']>>
+    >();
+  });
+
+  test('effect has correct params type: body', async () => {
+    const query = createQuery({
+      ...createApiEffect('put', '/blogposts'),
+    });
+
+    expectTypeOf(query.start).toEqualTypeOf<
+      EventCallable<FetchOptions<paths['/blogposts']['put']>>
+    >();
   });
 
   test('effect has correct types after mapping with source', async () => {
