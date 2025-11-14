@@ -1,11 +1,11 @@
-import { describe, expect, test, beforeEach } from 'vitest';
-import createFetchClient from 'openapi-fetch';
-import { allSettled, createStore, fork } from 'effector';
-import { createEffectorClient } from '../create-client';
-import { paths } from './api';
 import { createQuery } from '@farfetched/core';
 import { zodContract } from '@farfetched/zod';
+import { allSettled, createStore, fork } from 'effector';
+import createFetchClient from 'openapi-fetch';
 import { MockAgent, setGlobalDispatcher } from 'undici';
+import { beforeEach, describe, expect, test } from 'vitest';
+import { createEffectorClient } from '../create-client';
+import { paths } from './api';
 import { EndpointByMethod } from './zod';
 
 describe('createApiEffect', () => {

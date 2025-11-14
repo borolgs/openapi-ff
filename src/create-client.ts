@@ -22,6 +22,7 @@ import type {
   FilterKeys,
   ResponseObjectMap,
   PathsWithMethod,
+  OptionalParams,
 } from './types';
 
 export type OpenapiEffectorClient<Paths extends {}> = {
@@ -41,7 +42,7 @@ type CreateApiEffect<Paths extends Record<string, Record<HttpMethod, {}>>> = {
     method: Method,
     path: Path,
   ): {
-    effect: Effect<Init, Response['data'], ApiErrors<Responses> | HttpError | NetworkError>;
+    effect: Effect<OptionalParams<Init>, Response['data'], ApiErrors<Responses> | HttpError | NetworkError>;
     contract: Contract<unknown, Response['data']>;
   };
 
@@ -65,7 +66,7 @@ type CreateApiEffect<Paths extends Record<string, Record<HttpMethod, {}>>> = {
       };
     },
   ): {
-    effect: Effect<NewInit, Response['data'], ApiErrors<Responses> | HttpError | NetworkError>;
+    effect: Effect<OptionalParams<NewInit>, Response['data'], ApiErrors<Responses> | HttpError | NetworkError>;
     contract: Contract<unknown, Response['data']>;
   };
 
@@ -85,7 +86,7 @@ type CreateApiEffect<Paths extends Record<string, Record<HttpMethod, {}>>> = {
       mapParams: (params: NewInit) => Init;
     },
   ): {
-    effect: Effect<NewInit, Response['data'], ApiErrors<Responses> | HttpError | NetworkError>;
+    effect: Effect<OptionalParams<NewInit>, Response['data'], ApiErrors<Responses> | HttpError | NetworkError>;
     contract: Contract<unknown, Response['data']>;
   };
 };

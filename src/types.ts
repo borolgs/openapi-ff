@@ -21,3 +21,7 @@ export type PathsWithMethod<Paths extends {}, PathnameMethod extends HttpMethod>
     ? Pathname
     : never;
 }[keyof Paths];
+
+export type HasRequiredKeys<T> = {} extends T ? true : false;
+// biome-ignore lint/suspicious/noConfusingVoidType: <explanation>
+export type OptionalParams<T> = HasRequiredKeys<T> extends true ? T | void : T;
